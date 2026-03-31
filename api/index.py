@@ -3,15 +3,34 @@ import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import LabelEncoder
 import os
+import warnings
+from sklearn.exceptions import DataConversionWarning
+
+# Remove warnings
+warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=DataConversionWarning)
 
 # Fix paths for Vercel
 BASE_DIR = os.path.dirname(__file__)
 
 app = Flask(__name__, template_folder="../templates")
 
-# Load dataset safely
+# Load dataset
 data_path = os.path.join(BASE_DIR, "../fitness_data.csv")
 data = pd.read_csv(data_path)
+
+# 🔥 IMPORTANT: Reduce plan categories (fix ML issue)
+def simplify_plan(plan):
+    plan = plan.lower()
+    if "loss" in plan or "cardio" in plan or "fat" in plan:
+        return "weight_loss"
+    elif "gain" in plan or "muscle" in plan or "strength" in plan:
+        return "weight_gain"
+    else:
+        return "maintenance"
+
+data['plan'] = data['plan'].apply(simplify_plan)
 
 # Encoding
 le_goal = LabelEncoder()
@@ -54,6 +73,15 @@ def get_progress(weight, ideal):
         return f"You need to gain {abs(diff)} kg"
     else:
         return "You are at ideal weight"
+
+# Convert ML output to readable text
+def format_plan(plan):
+    if plan == "weight_loss":
+        return "Cardio + Fat loss workout"
+    elif plan == "weight_gain":
+        return "Strength training + Muscle gain"
+    else:
+        return "Balanced fitness routine"
 
 def get_workout_plan(category, goal):
     if category == "Overweight":
@@ -153,9 +181,9 @@ def home():
             )
 
             prediction = model.predict(input_data)
-            plan = le_plan.inverse_transform(prediction)[0]
+            plan_raw = le_plan.inverse_transform(prediction)[0]
+            plan = format_plan(plan_raw)
 
-            # Extra features
             workout = get_workout_plan(category, goal)
             diet = get_diet_plan(category, goal)
             tip = get_tip(goal)
@@ -183,15 +211,14 @@ def home():
             result = {
                 "bmi": "Error",
                 "category": "Invalid input",
-                "plan": str(e),
-                "workout": "-",
-                "diet": "-",
-                "tip": "-",
-                "ideal": "-",
-                "progress": "-"
+                "plan": str(e)
             }
 
     return render_template("index.html", result=result)
 
 # Vercel config
 app.debug = False
+
+# Local run
+if __name__ == "__main__":
+    app.run(debug=True)
