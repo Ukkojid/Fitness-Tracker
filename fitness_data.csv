@@ -1,0 +1,31 @@
+weight,height,age,goal,BMI,category,plan
+45,160,20,weight gain,17.6,underweight,high calorie diet + strength training
+50,165,22,weight gain,18.3,underweight,protein rich diet + gym
+48,158,19,weight gain,19.2,normal,light strength + balanced diet
+60,170,25,maintain,20.7,normal,balanced diet + cardio
+65,172,27,maintain,22.0,normal,cardio + yoga
+70,175,28,maintain,22.9,normal,moderate exercise
+75,168,30,weight loss,26.6,overweight,cardio + low calorie diet
+80,170,32,weight loss,27.6,overweight,HIIT + diet control
+85,175,35,weight loss,27.7,overweight,intense cardio + low carbs
+90,178,40,weight loss,28.4,overweight,walking + calorie deficit
+55,162,24,maintain,21.0,normal,balanced diet
+58,168,26,maintain,20.5,normal,light gym + diet
+62,171,29,maintain,21.2,normal,moderate cardio
+68,173,31,weight loss,22.7,normal,cardio focus
+72,176,34,weight loss,23.2,normal,HIIT training
+77,169,36,weight loss,26.9,overweight,fat burn workout
+82,174,38,weight loss,27.1,overweight,intense cardio
+52,160,23,weight gain,20.3,normal,protein + gym
+49,159,21,weight gain,19.4,normal,light strength training
+47,155,20,weight gain,19.5,normal,home workout + diet
+92,180,42,weight loss,28.4,overweight,walking + diet
+88,177,39,weight loss,28.1,overweight,HIIT + diet
+66,170,28,maintain,22.8,normal,balanced fitness
+63,168,27,maintain,22.3,normal,cardio + yoga
+59,165,25,maintain,21.7,normal,moderate training
+54,162,22,weight gain,20.6,normal,strength training
+46,158,19,weight gain,18.4,underweight,high calorie diet
+44,155,18,weight gain,18.3,underweight,mass gain plan
+78,172,33,weight loss,26.4,overweight,cardio + diet
+83,175,37,weight loss,27.1,overweight,HIIT + low carb
