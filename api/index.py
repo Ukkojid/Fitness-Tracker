@@ -43,10 +43,21 @@ def get_category(bmi):
     else:
         return "Overweight"
 
+def ideal_weight(height):
+    return round((height - 100) * 0.9, 2)
+
+def get_progress(weight, ideal):
+    diff = round(weight - ideal, 2)
+    if diff > 0:
+        return f"You need to lose {diff} kg"
+    elif diff < 0:
+        return f"You need to gain {abs(diff)} kg"
+    else:
+        return "You are at ideal weight"
+
 def get_workout_plan(category, goal):
     if category == "Overweight":
         return "30 min walking + cardio + light strength training"
-
     elif category == "Normal":
         if goal == "weight loss":
             return "HIIT + cardio + abs workout"
@@ -54,32 +65,69 @@ def get_workout_plan(category, goal):
             return "strength training (push/pull/legs)"
         else:
             return "moderate exercise + yoga"
-
-    else:  # Underweight
+    else:
         return "strength training + low cardio + muscle gain workout"
 
 def get_diet_plan(category, goal):
     if category == "Overweight":
-        return "Low calorie diet, more vegetables, high protein, avoid sugar"
-
+        return "Low calorie diet, vegetables, high protein, avoid sugar"
     elif category == "Normal":
         if goal == "weight loss":
-            return "Calorie deficit + protein + fiber rich foods"
+            return "Calorie deficit + protein + fiber foods"
         elif goal == "weight gain":
             return "High calorie + protein + healthy fats"
         else:
             return "Balanced diet (carbs + protein + fats)"
-
-    else:  # Underweight
-        return "High calorie diet, milk, nuts, banana, protein rich foods"
+    else:
+        return "High calorie diet, milk, nuts, banana, protein foods"
 
 def get_tip(goal):
     if goal == "weight loss":
         return "Stay consistent and track calories"
     elif goal == "weight gain":
-        return "Eat more frequently and lift weights"
+        return "Eat more and do strength training"
     else:
         return "Maintain balance and stay active"
+
+def get_weekly_workout(goal):
+    if goal == "weight loss":
+        return {
+            "Monday": "Cardio + Abs",
+            "Tuesday": "HIIT",
+            "Wednesday": "Rest",
+            "Thursday": "Cardio + Core",
+            "Friday": "Full Body",
+            "Saturday": "Yoga",
+            "Sunday": "Rest"
+        }
+    elif goal == "weight gain":
+        return {
+            "Monday": "Chest",
+            "Tuesday": "Back",
+            "Wednesday": "Legs",
+            "Thursday": "Shoulders",
+            "Friday": "Arms",
+            "Saturday": "Light Cardio",
+            "Sunday": "Rest"
+        }
+    else:
+        return {
+            "Monday": "Yoga",
+            "Tuesday": "Cardio",
+            "Wednesday": "Rest",
+            "Thursday": "Strength",
+            "Friday": "Walking",
+            "Saturday": "Stretching",
+            "Sunday": "Rest"
+        }
+
+def get_weekly_diet(goal):
+    return {
+        "Breakfast": "Oats + Milk + Fruits",
+        "Lunch": "Rice + Dal + Vegetables",
+        "Dinner": "Chapati + Paneer/Chicken",
+        "Snacks": "Nuts + Banana"
+    }
 
 # ---------------- ROUTE ---------------- #
 
@@ -92,16 +140,13 @@ def home():
             weight = float(request.form["weight"])
             height = float(request.form["height"])
             age = int(request.form["age"])
-            goal = request.form["goal"].strip().lower()   # ✅ FIXED
+            goal = request.form["goal"].strip().lower()
 
-            # Encode goal safely
             goal_encoded = le_goal.transform([goal])[0]
 
-            # Calculate BMI & category
             bmi = calculate_bmi(weight, height)
             category = get_category(bmi)
 
-            # ML Prediction
             input_data = pd.DataFrame(
                 [[weight, height, age, goal_encoded, bmi]],
                 columns=['weight', 'height', 'age', 'goal', 'BMI']
@@ -110,10 +155,16 @@ def home():
             prediction = model.predict(input_data)
             plan = le_plan.inverse_transform(prediction)[0]
 
-            # Rule-based suggestions
+            # Extra features
             workout = get_workout_plan(category, goal)
             diet = get_diet_plan(category, goal)
-            tip = get_tip(goal)   # ✅ ADDED
+            tip = get_tip(goal)
+
+            ideal = ideal_weight(height)
+            progress = get_progress(weight, ideal)
+
+            weekly_workout = get_weekly_workout(goal)
+            weekly_diet = get_weekly_diet(goal)
 
             result = {
                 "bmi": bmi,
@@ -121,7 +172,11 @@ def home():
                 "plan": plan,
                 "workout": workout,
                 "diet": diet,
-                "tip": tip   # ✅ ADDED
+                "tip": tip,
+                "ideal": ideal,
+                "progress": progress,
+                "weekly_workout": weekly_workout,
+                "weekly_diet": weekly_diet
             }
 
         except Exception as e:
@@ -131,10 +186,12 @@ def home():
                 "plan": str(e),
                 "workout": "-",
                 "diet": "-",
-                "tip": "-"
+                "tip": "-",
+                "ideal": "-",
+                "progress": "-"
             }
 
     return render_template("index.html", result=result)
 
-# IMPORTANT for Vercel
+# Vercel config
 app.debug = False
