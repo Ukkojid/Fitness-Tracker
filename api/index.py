@@ -9,7 +9,7 @@ BASE_DIR = os.path.dirname(__file__)
 
 app = Flask(__name__, template_folder="../templates")
 
-# Load dataset (correct path)
+# Load dataset safely
 data_path = os.path.join(BASE_DIR, "../fitness_data.csv")
 data = pd.read_csv(data_path)
 
@@ -30,9 +30,10 @@ y = data['plan']
 model = DecisionTreeClassifier()
 model.fit(X, y)
 
-# Functions
+# ---------------- FUNCTIONS ---------------- #
+
 def calculate_bmi(weight, height):
-    return round(weight / ((height/100) ** 2), 2)
+    return round(weight / ((height / 100) ** 2), 2)
 
 def get_category(bmi):
     if bmi < 18.5:
@@ -42,7 +43,46 @@ def get_category(bmi):
     else:
         return "Overweight"
 
-# Route
+def get_workout_plan(category, goal):
+    if category == "Overweight":
+        return "30 min walking + cardio + light strength training"
+
+    elif category == "Normal":
+        if goal == "weight loss":
+            return "HIIT + cardio + abs workout"
+        elif goal == "weight gain":
+            return "strength training (push/pull/legs)"
+        else:
+            return "moderate exercise + yoga"
+
+    else:  # Underweight
+        return "strength training + low cardio + muscle gain workout"
+
+def get_diet_plan(category, goal):
+    if category == "Overweight":
+        return "Low calorie diet, more vegetables, high protein, avoid sugar"
+
+    elif category == "Normal":
+        if goal == "weight loss":
+            return "Calorie deficit + protein + fiber rich foods"
+        elif goal == "weight gain":
+            return "High calorie + protein + healthy fats"
+        else:
+            return "Balanced diet (carbs + protein + fats)"
+
+    else:  # Underweight
+        return "High calorie diet, milk, nuts, banana, protein rich foods"
+
+def get_tip(goal):
+    if goal == "weight loss":
+        return "Stay consistent and track calories"
+    elif goal == "weight gain":
+        return "Eat more frequently and lift weights"
+    else:
+        return "Maintain balance and stay active"
+
+# ---------------- ROUTE ---------------- #
+
 @app.route("/", methods=["GET", "POST"])
 def home():
     result = None
@@ -52,13 +92,16 @@ def home():
             weight = float(request.form["weight"])
             height = float(request.form["height"])
             age = int(request.form["age"])
-            goal = request.form["goal"]
+            goal = request.form["goal"].strip().lower()   # ✅ FIXED
 
+            # Encode goal safely
             goal_encoded = le_goal.transform([goal])[0]
 
+            # Calculate BMI & category
             bmi = calculate_bmi(weight, height)
             category = get_category(bmi)
 
+            # ML Prediction
             input_data = pd.DataFrame(
                 [[weight, height, age, goal_encoded, bmi]],
                 columns=['weight', 'height', 'age', 'goal', 'BMI']
@@ -67,21 +110,31 @@ def home():
             prediction = model.predict(input_data)
             plan = le_plan.inverse_transform(prediction)[0]
 
+            # Rule-based suggestions
+            workout = get_workout_plan(category, goal)
+            diet = get_diet_plan(category, goal)
+            tip = get_tip(goal)   # ✅ ADDED
+
             result = {
                 "bmi": bmi,
                 "category": category,
-                "plan": plan
+                "plan": plan,
+                "workout": workout,
+                "diet": diet,
+                "tip": tip   # ✅ ADDED
             }
 
         except Exception as e:
             result = {
                 "bmi": "Error",
-                "category": "Check input",
-                "plan": str(e)
+                "category": "Invalid input",
+                "plan": str(e),
+                "workout": "-",
+                "diet": "-",
+                "tip": "-"
             }
 
     return render_template("index.html", result=result)
 
-
-# IMPORTANT for Vercel (no app.run)
+# IMPORTANT for Vercel
 app.debug = False
